@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { currentUser, pb } from "./pocketbase";
-
+  import * as Card from "$lib/components/ui/card";
+  import { Button } from "$lib/components/ui/button";
+  import { Textarea } from "$lib/components/ui/textarea";
   let messages: any[] = [];
   let newMessage: string;
   let unsubscribe: () => void;
@@ -41,20 +43,30 @@
   }
 </script>
 
-<div class="messages">
-  {#each messages as message (message.id)}
-    <div>
-      <div>
-        {message.text}
-      </div>
-      <small>
-        Sent by User: {message.expand?.user?.username}
-      </small>
+<Card.Root>
+  <Card.Header>
+    <Card.Title>Chat Room</Card.Title>
+    <Card.Description>Chat Room Description</Card.Description>
+  </Card.Header>
+  <Card.Content
+    class="h-80 overflow-y-auto scrollbar-hide bg-white border border-gray-200  shadow-inner"
+  >
+    <div class="messages">
+      {#each messages as message (message.id)}
+        <div>
+          <div>
+            {message.expand?.user?.username} : {message.text}
+          </div>
+        </div>
+      {/each}
     </div>
-  {/each}
-</div>
-
-<form on:submit|preventDefault={sendMessage}>
-  <input placeholder="Message" type="text" bind:value={newMessage} />
-  <button type="submit">Send</button>
-</form>
+  </Card.Content>
+  <Card.Footer>
+    <form on:submit|preventDefault={sendMessage}>
+      <Textarea placeholder="Message" bind:value={newMessage} />
+      <Button class="bg-black text-white" variant="outline" type="submit"
+        >Send</Button
+      >
+    </form>
+  </Card.Footer>
+</Card.Root>
