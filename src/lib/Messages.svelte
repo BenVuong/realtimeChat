@@ -44,7 +44,7 @@
   }
 </script>
 
-<Card.Root>
+<Card.Root class="w-2/5">
   <Card.Header class="justify-items-center bg-gray-500">
     <Card.Title>Chat Room</Card.Title>
     <Card.Description class="text-black"
@@ -52,7 +52,7 @@
     >
   </Card.Header>
   <Card.Content
-    class="h-80 max-w-lg flow-text break-words overflow-y-auto scrollbar-hide bg-white border-2 border-gray-500  shadow-inner"
+    class="h-80 flow-text break-words overflow-y-auto scrollbar-hide bg-white border-2 border-gray-500  shadow-inner"
   >
     <div class="flow-text break-words">
       {#each messages as message (message.id)}
