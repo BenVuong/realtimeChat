@@ -5,12 +5,15 @@
   import { Button } from "$lib/components/ui/button";
   import { Textarea } from "$lib/components/ui/textarea";
   import * as HoverCard from "$lib/components/ui/hover-card";
-
   let messages: any[] = [];
   let newMessage: string;
-  let messageContainer;
+  let editMode = false;
+  let editedMessage: string;
+  let editedMessageID: string;
   let unsubscribe: () => void;
   pb.autoCancellation(false);
+
+  //Read
   onMount(async () => {
     const resultList = await pb.collection("messages").getList(1, 50, {
       sort: "created",
@@ -26,6 +29,15 @@
           record.expand = { user };
           messages = [...messages, record];
         }
+
+        if (action === "update") {
+          const resultList = await pb.collection("messages").getList(1, 50, {
+            sort: "created",
+            expand: "user",
+          });
+          messages = resultList.items;
+        }
+
         if (action === "delete") {
           messages = messages.filter((m) => m.id !== record.id);
         }
@@ -36,6 +48,31 @@
     unsubscribe();
   });
 
+  function toggleEdit(messageID: string, text: string) {
+    editMode = !editMode;
+    if (editMode === true) {
+      editedMessageID = messageID;
+      editedMessage = text;
+    } else {
+      editedMessageID = "";
+      editedMessage = "";
+    }
+  }
+
+  //Update
+  async function editMessage() {
+    const data = {
+      text: editedMessage,
+      user: $currentUser!.id,
+    };
+    const updateMessage = await pb
+      .collection("messages")
+      .update(editedMessageID, data);
+    editedMessage = "";
+    editMode = false;
+  }
+
+  //Create
   async function sendMessage() {
     const data = {
       text: newMessage,
@@ -45,6 +82,7 @@
     newMessage = "";
   }
 
+  //Delete
   async function deleteMessage(messageID: string) {
     const deletedMessage = await pb.collection("messages").delete(messageID);
   }
@@ -76,6 +114,9 @@
                     variant="destructive"
                     on:click={() => deleteMessage(message.id)}>Delete</Button
                   >
+                  <Button on:click={() => toggleEdit(message.id, message.text)}
+                    >Edit</Button
+                  >
                 </HoverCard.Content>
               </HoverCard.Root>
             {:else}
@@ -87,11 +128,21 @@
     </div>
   </Card.Content>
   <Card.Footer class=" border-2 border-gray-500">
-    <form class="py-3" on:submit|preventDefault={sendMessage}>
-      <Textarea placeholder="Message" class=" w-80" bind:value={newMessage} />
-      <Button class="bg-black text-white" variant="outline" type="submit"
-        >Send</Button
-      >
-    </form>
+    {#if editMode}
+      <form class="py-3" on:submit|preventDefault={editMessage}>
+        <Textarea class=" w-80" bind:value={editedMessage} />
+        <Button class="bg-black text-white" variant="outline" type="submit"
+          >Edit Message</Button
+        >
+        <Button on:click={() => toggleEdit("", "")}>Cancel</Button>
+      </form>
+    {:else}
+      <form class="py-3" on:submit|preventDefault={sendMessage}>
+        <Textarea placeholder="Message" class=" w-80" bind:value={newMessage} />
+        <Button class="bg-black text-white" variant="outline" type="submit"
+          >Send</Button
+        >
+      </form>
+    {/if}
   </Card.Footer>
 </Card.Root>
