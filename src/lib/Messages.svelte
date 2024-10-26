@@ -4,6 +4,8 @@
   import * as Card from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
   import { Textarea } from "$lib/components/ui/textarea";
+  import * as HoverCard from "$lib/components/ui/hover-card";
+
   let messages: any[] = [];
   let newMessage: string;
   let messageContainer;
@@ -42,6 +44,10 @@
     const createdMessage = await pb.collection("messages").create(data);
     newMessage = "";
   }
+
+  async function deleteMessage(messageID: string) {
+    const deletedMessage = await pb.collection("messages").delete(messageID);
+  }
 </script>
 
 <Card.Root class="w-2/5">
@@ -61,7 +67,21 @@
             {message.expand?.user?.username}
             {"["}{message.created}{"]"}:
           </small>
-          <div>{message.text}</div>
+          <div>
+            {#if $currentUser?.username == message.expand?.user?.username}
+              <HoverCard.Root>
+                <HoverCard.Trigger>{message.text}</HoverCard.Trigger>
+                <HoverCard.Content>
+                  <Button
+                    variant="destructive"
+                    on:click={() => deleteMessage(message.id)}>Delete</Button
+                  >
+                </HoverCard.Content>
+              </HoverCard.Root>
+            {:else}
+              {message.text}
+            {/if}
+          </div>
         </div>
       {/each}
     </div>

@@ -33,7 +33,7 @@
 
 {#if $currentUser}
   <div class="text-center">
-    <p>Signed in as {$currentUser.username}</p>
+    <p>Currently signed in as {$currentUser.username}</p>
     <Button on:click={signOut}>Sign Out</Button>
   </div>
 {:else}
