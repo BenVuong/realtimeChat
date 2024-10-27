@@ -128,11 +128,11 @@
     >
   </Card.Header>
   <Card.Content
-    class="h-80 flow-text break-words overflow-y-auto scrollbar-hide bg-white border-2 border-gray-500  shadow-inner"
+    class="h-80 flow-text break-words overflow-auto scrollbar-hide bg-white border-2 border-gray-500  shadow-inner"
   >
-    <div class="flow-text break-words">
+    <div class="break-words">
       {#each messages as message (message.id)}
-        <div class="py-1">
+        <div class="pt-1">
           <small class="flow-text break-words">
             <div
               style="color: {getColorForUser(message.expand?.user?.username)}"

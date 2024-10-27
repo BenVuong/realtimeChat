@@ -20,7 +20,7 @@
       const createdUser = await pb.collection("users").create(data);
       await login();
     } catch (err: any) {
-      console.log(err.data);
+      console.log(err.data.password);
     }
   }
 
