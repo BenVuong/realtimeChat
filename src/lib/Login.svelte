@@ -40,7 +40,7 @@
   <Tabs.Root value="account" class="w-[400px]">
     <Tabs.List class="flex justify-center items-center">
       <Tabs.Trigger value="account">Login</Tabs.Trigger>
-      <Tabs.Trigger value="password">Creat an Account</Tabs.Trigger>
+      <Tabs.Trigger value="password">Create an Account</Tabs.Trigger>
     </Tabs.List>
     <Tabs.Content value="account">
       <form on:submit|preventDefault>

@@ -7,7 +7,7 @@
 </script>
 
 <main>
-  <div class="flex justify-center items-center content-center">
+  <div class=" flex justify-center items-center content-center">
     <Card.Root>
       <Card.Header class="text-center">
         <Card.Title>Sample Real Time Chat Application</Card.Title>

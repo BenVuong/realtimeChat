@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, afterUpdate } from "svelte";
   import { currentUser, pb } from "./pocketbase";
   import * as Card from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
@@ -12,6 +12,7 @@
   let editedMessageID: string;
   let unsubscribe: () => void;
   pb.autoCancellation(false);
+  const userColors = new Map<string, string>();
 
   //Read
   onMount(async () => {
@@ -86,6 +87,37 @@
   async function deleteMessage(messageID: string) {
     const deletedMessage = await pb.collection("messages").delete(messageID);
   }
+
+  //generate a random hex color code
+  function getRandomColor() {
+    const letters = "0123456789ABCDEF";
+    let color = "#";
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+
+  // assigns color to a username or get color of username if already assigned
+  function getColorForUser(username: string) {
+    if (!userColors.has(username)) {
+      userColors.set(username, getRandomColor());
+    }
+    return userColors.get(username);
+  }
+
+  //quality of life feature
+  //users can now press enter on key to submit text
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault(); // Prevents adding a new line
+      if (editMode === false) {
+        sendMessage();
+      } else if (editMode === true) {
+        editMessage();
+      }
+    }
+  }
 </script>
 
 <Card.Root class="w-2/5">
@@ -102,27 +134,30 @@
       {#each messages as message (message.id)}
         <div class="py-1">
           <small class="flow-text break-words">
-            {message.expand?.user?.username}
-            {"["}{message.created}{"]"}:
+            <div
+              style="color: {getColorForUser(message.expand?.user?.username)}"
+            >
+              {message.expand?.user?.username}
+              {"["}{message.created}{"]"}:
+            </div>
           </small>
-          <div>
-            {#if $currentUser?.username == message.expand?.user?.username}
-              <HoverCard.Root>
-                <HoverCard.Trigger>{message.text}</HoverCard.Trigger>
-                <HoverCard.Content>
-                  <Button
-                    variant="destructive"
-                    on:click={() => deleteMessage(message.id)}>Delete</Button
-                  >
-                  <Button on:click={() => toggleEdit(message.id, message.text)}
-                    >Edit</Button
-                  >
-                </HoverCard.Content>
-              </HoverCard.Root>
-            {:else}
-              {message.text}
-            {/if}
-          </div>
+
+          {#if $currentUser?.username == message.expand?.user?.username}
+            <HoverCard.Root>
+              <HoverCard.Trigger>{message.text}</HoverCard.Trigger>
+              <HoverCard.Content>
+                <Button
+                  variant="destructive"
+                  on:click={() => deleteMessage(message.id)}>Delete</Button
+                >
+                <Button on:click={() => toggleEdit(message.id, message.text)}
+                  >Edit</Button
+                >
+              </HoverCard.Content>
+            </HoverCard.Root>
+          {:else}
+            {message.text}
+          {/if}
         </div>
       {/each}
     </div>
@@ -130,7 +165,11 @@
   <Card.Footer class=" border-2 border-gray-500">
     {#if editMode}
       <form class="py-3" on:submit|preventDefault={editMessage}>
-        <Textarea class=" w-80" bind:value={editedMessage} />
+        <Textarea
+          class=" w-80"
+          bind:value={editedMessage}
+          on:keydown={handleKeydown}
+        />
         <Button class="bg-black text-white" variant="outline" type="submit"
           >Edit Message</Button
         >
@@ -138,7 +177,12 @@
       </form>
     {:else}
       <form class="py-3" on:submit|preventDefault={sendMessage}>
-        <Textarea placeholder="Message" class=" w-80" bind:value={newMessage} />
+        <Textarea
+          placeholder="Message"
+          class=" w-80"
+          bind:value={newMessage}
+          on:keydown={handleKeydown}
+        />
         <Button class="bg-black text-white" variant="outline" type="submit"
           >Send</Button
         >
