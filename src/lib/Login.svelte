@@ -29,7 +29,8 @@
       //if username is invalid already taken or password length is wrong
       if (err.data.data.password?.message != undefined) {
         alert(err.data.data.password?.message);
-      } else if (err.data.data.username?.message != undefined) {
+      }
+      if (err.data.data.username?.message != undefined) {
         alert(err.data.data.username?.message);
       }
     }
