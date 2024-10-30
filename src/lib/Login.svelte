@@ -7,7 +7,12 @@
   let password: string;
 
   async function login() {
-    await pb.collection("users").authWithPassword(username, password);
+    try {
+      await pb.collection("users").authWithPassword(username, password);
+    } catch (err: any) {
+      //give user the error message if login has failed
+      alert(err.data.message + " Incorrect username or password");
+    }
   }
 
   async function signUp() {
@@ -20,7 +25,13 @@
       const createdUser = await pb.collection("users").create(data);
       await login();
     } catch (err: any) {
-      console.log(err.data.password);
+      //display error message to user
+      //if username is invalid already taken or password length is wrong
+      if (err.data.data.password?.message != undefined) {
+        alert(err.data.data.password?.message);
+      } else if (err.data.data.username?.message != undefined) {
+        alert(err.data.data.username?.message);
+      }
     }
   }
 
