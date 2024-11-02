@@ -13,7 +13,8 @@
   let unsubscribe: () => void;
   pb.autoCancellation(false);
   const userColors = new Map<string, string>();
-
+  // Reference for scrolling to bottom
+  let bottomRef: HTMLDivElement | null = null;
   //Read
   onMount(async () => {
     const resultList = await pb.collection("messages").getList(1, 50, {
@@ -48,6 +49,16 @@
   onDestroy(() => {
     unsubscribe();
   });
+
+  //autoscroll to the bottom when new message is added
+  afterUpdate(() => {
+    scrollToBottom();
+  });
+
+  // Scroll to the bottom of the messages list
+  function scrollToBottom() {
+    bottomRef?.scrollIntoView({ behavior: "smooth" });
+  }
 
   function toggleEdit(messageID: string, text: string) {
     editMode = !editMode;
@@ -127,10 +138,8 @@
       >Enjoy talking with others</Card.Description
     >
   </Card.Header>
-  <Card.Content
-    class="h-80 flow-text break-words overflow-auto scrollbar-hide bg-white border-2 border-gray-500  shadow-inner"
-  >
-    <div class="break-words">
+  <Card.Content>
+    <div class="h-80 flow-text break-words overflow-auto scrollbar-hide">
       {#each messages as message (message.id)}
         <div class="pt-1">
           <small class="flow-text break-words">
@@ -160,6 +169,7 @@
           {/if}
         </div>
       {/each}
+      <div bind:this={bottomRef}></div>
     </div>
   </Card.Content>
   <Card.Footer class=" border-2 border-gray-500">
