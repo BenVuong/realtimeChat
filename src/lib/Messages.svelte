@@ -10,6 +10,7 @@
   let editMode = false;
   let editedMessage: string;
   let editedMessageID: string;
+  let shouldScroll = false;
   let unsubscribe: () => void;
   pb.autoCancellation(false);
   const userColors = new Map<string, string>();
@@ -17,12 +18,18 @@
   let bottomRef: HTMLDivElement | null = null;
   //Read
   onMount(async () => {
+    //todo: add pagination in the frontend
+    //where it should load 50 of the most recently made messages
+    //as you scroll up then it there would a be a button that
+    //would load the the next 50 most recently made messages
+    //so start from the last page and move backwards
     const resultList = await pb.collection("messages").getList(1, 50, {
       sort: "created",
       expand: "user",
     });
     messages = resultList.items;
-
+    shouldScroll = true;
+    console.log(resultList);
     unsubscribe = await pb
       .collection("messages")
       .subscribe("*", async ({ action, record }) => {
@@ -30,6 +37,7 @@
           const user = await pb.collection("users").getOne(record.user);
           record.expand = { user };
           messages = [...messages, record];
+          shouldScroll = true;
         }
 
         if (action === "update") {
@@ -52,7 +60,10 @@
 
   //autoscroll to the bottom when new message is added
   afterUpdate(() => {
-    scrollToBottom();
+    if (shouldScroll === true) {
+      scrollToBottom();
+      shouldScroll = false;
+    }
   });
 
   // Scroll to the bottom of the messages list
@@ -92,6 +103,7 @@
     };
     const createdMessage = await pb.collection("messages").create(data);
     newMessage = "";
+    scrollToBottom();
   }
 
   //Delete
