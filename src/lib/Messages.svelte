@@ -11,6 +11,8 @@
   let editedMessage: string;
   let editedMessageID: string;
   let shouldScroll = false;
+  let totalPages: number;
+  let page: number;
   let unsubscribe: () => void;
   pb.autoCancellation(false);
   const userColors = new Map<string, string>();
@@ -23,13 +25,21 @@
     //as you scroll up then it there would a be a button that
     //would load the the next 50 most recently made messages
     //so start from the last page and move backwards
-    const resultList = await pb.collection("messages").getList(1, 50, {
+    let resultList = await pb.collection("messages").getList(1, 30, {
+      sort: "created",
+      expand: "user",
+    });
+
+    totalPages = resultList.totalPages;
+    shouldScroll = true;
+    resultList = await pb.collection("messages").getList(totalPages, 30, {
       sort: "created",
       expand: "user",
     });
     messages = resultList.items;
-    shouldScroll = true;
+    page = totalPages;
     console.log(resultList);
+    console.log(totalPages);
     unsubscribe = await pb
       .collection("messages")
       .subscribe("*", async ({ action, record }) => {
@@ -41,7 +51,7 @@
         }
 
         if (action === "update") {
-          const resultList = await pb.collection("messages").getList(1, 50, {
+          const resultList = await pb.collection("messages").getList(1, 30, {
             sort: "created",
             expand: "user",
           });
@@ -93,6 +103,18 @@
       .update(editedMessageID, data);
     editedMessage = "";
     editMode = false;
+  }
+
+  //load the previous page of messages and concat
+  //with the current page to make it one long list of messages
+  async function loadMore() {
+    let resultList = await pb.collection("messages").getList(page - 1, 30, {
+      sort: "created",
+      expand: "user",
+    });
+    page = page - 1;
+    let list = resultList.items;
+    messages = list.concat(messages);
   }
 
   //Create
@@ -152,6 +174,9 @@
   </Card.Header>
   <Card.Content>
     <div class="h-80 flow-text break-words overflow-auto scrollbar-hide">
+      {#if page > 1}
+        <Button on:click={() => loadMore()}>Load more</Button>
+      {/if}
       {#each messages as message (message.id)}
         <div class="pt-1">
           <small class="flow-text break-words">
