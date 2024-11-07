@@ -38,6 +38,7 @@
     });
     messages = resultList.items;
     page = totalPages;
+
     console.log(resultList);
     console.log(totalPages);
     unsubscribe = await pb
@@ -48,14 +49,6 @@
           record.expand = { user };
           messages = [...messages, record];
           shouldScroll = true;
-        }
-
-        if (action === "update") {
-          const resultList = await pb.collection("messages").getList(1, 30, {
-            sort: "created",
-            expand: "user",
-          });
-          messages = resultList.items;
         }
 
         if (action === "delete") {
@@ -101,6 +94,12 @@
     const updateMessage = await pb
       .collection("messages")
       .update(editedMessageID, data);
+    const index = messages.findIndex(
+      (message) => message.id == editedMessageID
+    );
+    if (index !== -1) {
+      messages[index].text = editedMessage;
+    }
     editedMessage = "";
     editMode = false;
   }
@@ -189,18 +188,16 @@
           </small>
 
           {#if $currentUser?.username == message.expand?.user?.username}
-            <HoverCard.Root>
-              <HoverCard.Trigger>{message.text}</HoverCard.Trigger>
-              <HoverCard.Content>
-                <Button
-                  variant="destructive"
-                  on:click={() => deleteMessage(message.id)}>Delete</Button
-                >
-                <Button on:click={() => toggleEdit(message.id, message.text)}
-                  >Edit</Button
-                >
-              </HoverCard.Content>
-            </HoverCard.Root>
+            {message.text}
+            <Button
+              class="h-4 px-2 text-sm"
+              on:click={() => toggleEdit(message.id, message.text)}>Edit</Button
+            >
+            <Button
+              class="h-4 px-2 text-sm"
+              variant="destructive"
+              on:click={() => deleteMessage(message.id)}>Delete</Button
+            >
           {:else}
             {message.text}
           {/if}
