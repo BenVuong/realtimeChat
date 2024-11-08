@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy, afterUpdate } from "svelte";
+  import { onMount, onDestroy, afterUpdate, tick } from "svelte";
   import { currentUser, pb } from "./pocketbase";
   import * as Card from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
@@ -18,13 +18,9 @@
   const userColors = new Map<string, string>();
   // Reference for scrolling to bottom
   let bottomRef: HTMLDivElement | null = null;
+  let messageContainer: HTMLDivElement | null = null;
   //Read
   onMount(async () => {
-    //todo: add pagination in the frontend
-    //where it should load 50 of the most recently made messages
-    //as you scroll up then it there would a be a button that
-    //would load the the next 50 most recently made messages
-    //so start from the last page and move backwards
     let resultList = await pb.collection("messages").getList(1, 30, {
       sort: "created",
       expand: "user",
@@ -48,8 +44,30 @@
           const user = await pb.collection("users").getOne(record.user);
           record.expand = { user };
           messages = [...messages, record];
-          shouldScroll = true;
         }
+
+        //this feature might get annoying if there are many people editing at the same
+        //time and the message array keeps changing
+        //needs more time to work on
+        // if (action === "update") {
+        //   const List = await pb.collection("messages").getList(totalPages, 30, {
+        //     sort: "created",
+        //     expand: "user",
+        //   });
+        //   if (totalPages > page) {
+        //     for (let x = totalPages; x > page; x--) {
+        //       const resultList = await pb
+        //         .collection("messages")
+        //         .getList(x, 30, {
+        //           sort: "created",
+        //           expand: "user",
+        //         });
+        //       messages = [...resultList.items, ...messages];
+        //     }
+        //   } else {
+        //     messages = List.items;
+        //   }
+        // }
 
         if (action === "delete") {
           messages = messages.filter((m) => m.id !== record.id);
@@ -107,13 +125,23 @@
   //load the previous page of messages and concat
   //with the current page to make it one long list of messages
   async function loadMore() {
+    const oldScrollHeight = messageContainer?.scrollHeight ?? 0;
+    const oldScrollTop = messageContainer?.scrollTop ?? 0;
     let resultList = await pb.collection("messages").getList(page - 1, 30, {
       sort: "created",
       expand: "user",
     });
     page = page - 1;
-    let list = resultList.items;
-    messages = list.concat(messages);
+    messages = [...resultList.items, ...messages];
+
+    // Wait for the DOM to update
+    await tick();
+
+    // Calculate the new scroll position by comparing the scroll height before and after loading messages
+    if (messageContainer) {
+      messageContainer.scrollTop =
+        messageContainer.scrollHeight - oldScrollHeight + oldScrollTop;
+    }
   }
 
   //Create
@@ -124,6 +152,8 @@
     };
     const createdMessage = await pb.collection("messages").create(data);
     newMessage = "";
+
+    shouldScroll = true;
     scrollToBottom();
   }
 
@@ -172,7 +202,10 @@
     >
   </Card.Header>
   <Card.Content>
-    <div class="h-80 flow-text break-words overflow-auto scrollbar-hide">
+    <div
+      bind:this={messageContainer}
+      class="h-80 flow-text break-words overflow-auto scrollbar-hide"
+    >
       {#if page > 1}
         <Button on:click={() => loadMore()}>Load more</Button>
       {/if}
@@ -183,21 +216,29 @@
               style="color: {getColorForUser(message.expand?.user?.username)}"
             >
               {message.expand?.user?.username}
-              {"["}{message.created}{"]"}:
+              {"["}{message.created}{"]"}
+              {#if message.updated !== message.created}
+                <small>{"(Edited)"}</small>
+              {/if}:
             </div>
           </small>
 
           {#if $currentUser?.username == message.expand?.user?.username}
-            {message.text}
-            <Button
-              class="h-4 px-2 text-sm"
-              on:click={() => toggleEdit(message.id, message.text)}>Edit</Button
-            >
-            <Button
-              class="h-4 px-2 text-sm"
-              variant="destructive"
-              on:click={() => deleteMessage(message.id)}>Delete</Button
-            >
+            <HoverCard.Root>
+              <HoverCard.Trigger>{message.text}</HoverCard.Trigger>
+              <HoverCard.Content>
+                <Button
+                  class="h-4 px-2 text-sm"
+                  on:click={() => toggleEdit(message.id, message.text)}
+                  >Edit</Button
+                >
+                <Button
+                  class="h-4 px-2 text-sm"
+                  variant="destructive"
+                  on:click={() => deleteMessage(message.id)}>Delete</Button
+                >
+              </HoverCard.Content>
+            </HoverCard.Root>
           {:else}
             {message.text}
           {/if}
